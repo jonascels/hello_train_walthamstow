@@ -10,8 +10,8 @@ export default defineConfig({
     VitePWA({
       registerType: "autoUpdate", // a wall-mounted tablet picks up new versions by itself
       manifest: {
-        name: "Walthamstow Train Board",
-        short_name: "Trains",
+        name: "Hello Train!",
+        short_name: "Hello Train",
         description: "Live countdown to trains over the West Ave bridge",
         theme_color: "#823a62",
         background_color: "#15191e",
@@ -31,7 +31,7 @@ export default defineConfig({
         ],
       },
       workbox: {
-        globPatterns: ["**/*.{js,css,html,svg,png,ico}"],
+        globPatterns: ["**/*.{js,css,html,svg,png,ico,woff2}"],
         maximumFileSizeToCacheInBytes: 3 * 1024 * 1024, // MapLibre is ~1 MB
         // Live data must always come from the server, never the cache.
         navigateFallbackDenylist: [/^\/api/, /^\/ws/],

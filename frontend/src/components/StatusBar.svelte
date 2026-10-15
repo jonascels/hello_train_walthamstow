@@ -38,6 +38,7 @@
   {#if wakeNote}<span class="warn">· {wakeNote}</span>{/if}
   <span class="spacer"></span>
   <span>Times and positions are estimated · Powered by TfL Open Data</span>
+  <span class="credit">Designed by Jonas and Sebastian.</span>
 </footer>
 
 <style>
@@ -68,5 +69,11 @@
   }
   .warn {
     color: var(--warn);
+  }
+  .credit {
+    flex-basis: 100%; /* own line */
+    text-align: right;
+    font-family: "Fredoka", system-ui, sans-serif; /* loaded by TitleBadge */
+    font-weight: 600;
   }
 </style>

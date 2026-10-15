@@ -5,6 +5,7 @@
   import { onMount } from "svelte";
   import Countdown from "./components/Countdown.svelte";
   import StatusBar from "./components/StatusBar.svelte";
+  import TitleBadge from "./components/TitleBadge.svelte";
   import TrainMap from "./components/TrainMap.svelte";
   import { fetchConfig, fetchTrack, type AppConfig, type TrackGeometry } from "./lib/api";
   import { DIRECTION_COLOUR } from "./lib/colors";
@@ -53,6 +54,7 @@
 
 <main class:dark={theme.dark}>
   <div class="map-area">
+    <TitleBadge />
     {#if config && geometry}
       <!-- Re-create the map when switching light/dark: it needs a new base style. -->
       {#key theme.dark}
@@ -142,7 +144,7 @@
     border-right: 1px solid var(--border);
   }
   .message {
-    padding: 2rem;
+    padding: 5rem 2rem 2rem; /* clear of the title badge */
   }
 
   /* Landscape tablet: map on the left, countdowns stacked on the right. */
