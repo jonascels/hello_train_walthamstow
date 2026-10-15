@@ -1,6 +1,7 @@
 # Train Viewer
 
 Live "train board" for the West Ave and East Ave bridges on the Weaver line, Walthamstow.
+There is one countdown per direction, timed at the West Ave bridge.
 See [HANDOFF.md](HANDOFF.md) for the design.
 
 ## Setup

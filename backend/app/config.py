@@ -3,7 +3,7 @@
 from functools import lru_cache
 from pathlib import Path
 
-from pydantic import BaseModel
+from pydantic import BaseModel, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
@@ -27,7 +27,22 @@ class Settings(BaseSettings):
     line_id: str = "weaver"
     # JSON list in .env, e.g. BRIDGES='[{"id": "west-ave", "name": "West Ave", "lat": 51.58, "lon": -0.01}]'
     bridges: list[Bridge] = []
+    # The one bridge whose chainage the (single) countdown per direction uses.
+    # The other bridges are only drawn on the map.
+    timing_bridge_id: str = "west-ave"
     poll_interval_s: int = 30
+
+    @model_validator(mode="after")
+    def _timing_bridge_exists(self) -> "Settings":
+        if self.bridges and self.timing_bridge_id not in {b.id for b in self.bridges}:
+            raise ValueError(
+                f"TIMING_BRIDGE_ID {self.timing_bridge_id!r} not in BRIDGES"
+            )
+        return self
+
+    @property
+    def timing_bridge(self) -> Bridge:
+        return next(b for b in self.bridges if b.id == self.timing_bridge_id)
 
 
 @lru_cache

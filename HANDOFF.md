@@ -14,12 +14,14 @@ Owner: Jonas (GitHub `jonascels`). Comfortable with Python, Git, SQL and Streaml
 
 Neither TfL nor National Rail (Darwin) publishes train coordinates. They publish **predicted times at stations and timing points**. Train positions must therefore be **interpolated along the track geometry** between the last and next known timing points. Every "position" shown in the app is an estimate. Label it that way in the UI ("estimated position").
 
-## 3. Open decisions (ask Jonas before hard-coding)
+## 3. Decisions
 
-- **Which bridge exactly?** Needs a lat/lon. Candidate lines in Walthamstow, both London Overground:
-  - **Weaver line**: Liverpool Street ↔ Chingford, via St James Street, Walthamstow Central, Wood Street.
-  - **Suffragette line**: Gospel Oak ↔ Barking Riverside, via Blackhorse Road, Walthamstow Queen's Road.
-- Store the location in config (`BRIDGE_LAT`, `BRIDGE_LON`, `LINE_ID`), never inline.
+- **Line:** Weaver line (Liverpool Street ↔ Chingford), `LINE_ID=weaver`.
+- **Bridges:** two adjacent bridges, about 90 m apart:
+  - **West Ave**: 51.583355, -0.015871
+  - **East Ave**: 51.583491, -0.014558
+- **One countdown per direction for both bridges**, with all ETA calculations based on the **West Ave** bridge (`TIMING_BRIDGE_ID=west-ave`). East Ave is only drawn on the map. Wherever this document says "the bridge", read "the West Ave bridge".
+- Locations live in config (`BRIDGES` JSON list, `TIMING_BRIDGE_ID`, `LINE_ID` in `.env`), never inline.
 
 ## 4. Data sources
 

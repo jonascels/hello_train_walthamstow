@@ -18,4 +18,8 @@ async def health() -> dict[str, str]:
 async def config() -> dict[str, str | list[Bridge]]:
     """Public, non-secret config the frontend needs (never the API key)."""
     settings = get_settings()
-    return {"line_id": settings.line_id, "bridges": settings.bridges}
+    return {
+        "line_id": settings.line_id,
+        "bridges": settings.bridges,
+        "timing_bridge_id": settings.timing_bridge_id,
+    }
