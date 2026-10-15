@@ -1,6 +1,6 @@
 <script lang="ts">
-  // The map: base tiles, the track, stations and the two bridges.
-  // Train icons are added in milestone 6.
+  // The map: base tiles, the track, stations, the two bridges and moving
+  // train icons at their ESTIMATED positions (see lib/position.ts).
   import * as maplibregl from "maplibre-gl";
   import type * as GeoJSON from "geojson";
   import "maplibre-gl/dist/maplibre-gl.css";
@@ -9,11 +9,21 @@
   import workerUrl from "maplibre-gl/dist/maplibre-gl-worker.mjs?worker&url";
   import { onMount } from "svelte";
   import type { TrackGeometry } from "../lib/api";
+  import { serverNow } from "../lib/clock";
+  import { BRIDGE_COLOUR, DIRECTION_COLOUR, LINE_COLOUR } from "../lib/colors";
+  import type { Vehicle } from "../lib/live.svelte";
+  import { chainageAt, TrackLine } from "../lib/position";
 
   maplibregl.setWorkerUrl(workerUrl);
 
-  let { geometry, timingBridgeId }: { geometry: TrackGeometry; timingBridgeId: string } =
-    $props();
+  let {
+    geometry,
+    timingBridgeId,
+    vehicles,
+  }: { geometry: TrackGeometry; timingBridgeId: string; vehicles: Vehicle[] } = $props();
+
+  // Redraw train positions at most this often (they move ~1 m per 50 ms).
+  const FRAME_MS = 50;
 
   // How much track either side of the timing bridge the initial view shows.
   const VIEW_RADIUS_M = 3000;
@@ -36,7 +46,24 @@
     };
   }
 
+  // Current estimated position of every vehicle we can place.
+  function trainFeatures(track: TrackLine, nowMs: number) {
+    const features: GeoJSON.Feature<GeoJSON.Point>[] = [];
+    for (const v of vehicles) {
+      const chainage = chainageAt(v, nowMs);
+      if (chainage === null) continue;
+      features.push({
+        type: "Feature",
+        properties: { direction: v.direction, destination: v.destination },
+        geometry: { type: "Point", coordinates: track.lngLatAt(chainage) },
+      });
+    }
+    return { type: "FeatureCollection", features } as GeoJSON.FeatureCollection;
+  }
+
   onMount(() => {
+    const track = new TrackLine(geometry.track, geometry.track_length_m);
+    let frame = 0;
     const timingBridge = geometry.bridges.find((b) => b.id === timingBridgeId)!;
     const lons = geometry.bridges.map((b) => b.lon);
     const westernmost = lons.indexOf(Math.min(...lons));
@@ -56,8 +83,7 @@
         type: "line",
         source: "track",
         layout: { "line-cap": "round", "line-join": "round" },
-        // Weaver line maroon (TfL brand colour).
-        paint: { "line-color": "#823a62", "line-width": 5 },
+        paint: { "line-color": LINE_COLOUR, "line-width": 5 },
       });
 
       map.addSource("stations", { type: "geojson", data: pointsFeature(geometry.stations) });
@@ -68,7 +94,7 @@
         paint: {
           "circle-radius": 6,
           "circle-color": "#ffffff",
-          "circle-stroke-color": "#823a62",
+          "circle-stroke-color": LINE_COLOUR,
           "circle-stroke-width": 3,
         },
       });
@@ -102,8 +128,8 @@
         paint: {
           // The timing bridge (West Ave) is larger and filled.
           "circle-radius": ["case", ["get", "timing"], 9, 6],
-          "circle-color": ["case", ["get", "timing"], "#f5a623", "#ffffff"],
-          "circle-stroke-color": "#f5a623",
+          "circle-color": ["case", ["get", "timing"], BRIDGE_COLOUR, "#ffffff"],
+          "circle-stroke-color": BRIDGE_COLOUR,
           "circle-stroke-width": 3,
         },
       });
@@ -135,9 +161,45 @@
       const bounds = new maplibregl.LngLatBounds();
       for (const p of [...nearby, timingBridge]) bounds.extend([p.lon, p.lat]);
       map.fitBounds(bounds, { padding: 60, animate: false });
+
+      // Train icons, on top of everything else.
+      map.addSource("trains", { type: "geojson", data: trainFeatures(track, serverNow()) });
+      map.addLayer({
+        id: "trains",
+        type: "circle",
+        source: "trains",
+        paint: {
+          "circle-radius": 9,
+          "circle-color": [
+            "match",
+            ["get", "direction"],
+            "up",
+            DIRECTION_COLOUR.up,
+            DIRECTION_COLOUR.down,
+          ],
+          "circle-stroke-color": "#ffffff",
+          "circle-stroke-width": 3,
+        },
+      });
+
+      // Animation loop: recompute positions from the clock every frame.
+      // No server round-trip; the snapshot only changes every ~30 s.
+      const source = map.getSource("trains") as maplibregl.GeoJSONSource;
+      let lastDraw = 0;
+      const draw = (frameTime: number) => {
+        if (frameTime - lastDraw >= FRAME_MS) {
+          source.setData(trainFeatures(track, serverNow()));
+          lastDraw = frameTime;
+        }
+        frame = requestAnimationFrame(draw);
+      };
+      frame = requestAnimationFrame(draw);
     });
 
-    return () => map.remove();
+    return () => {
+      cancelAnimationFrame(frame);
+      map.remove();
+    };
   });
 </script>
 

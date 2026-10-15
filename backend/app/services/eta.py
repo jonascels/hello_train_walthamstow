@@ -11,7 +11,14 @@ The same formula works in both directions because chainages are signed.
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta
 
-from app.models import BridgeSnapshot, Direction, TimingPoint, Train, TrainService
+from app.models import (
+    BridgeSnapshot,
+    Direction,
+    TimingPoint,
+    Train,
+    TrainService,
+    Vehicle,
+)
 from app.services.geometry import Geometry, Station
 
 # TfL gives arrival times only; assume a train leaves this long after arriving.
@@ -117,6 +124,7 @@ class EtaTracker:
     def __init__(self, geometry: Geometry) -> None:
         self._bridge = geometry.timing_bridge
         self._either_side = geometry.stations_either_side(self._bridge.chainage_m)
+        self._stations = geometry.stations
         self._seen: dict[str, _Seen] = {}
 
     def update(self, services: list[TrainService], now: datetime) -> BridgeSnapshot:
@@ -136,7 +144,7 @@ class EtaTracker:
             if now - seen.last_seen <= FORGET_AFTER
         }
 
-        trains = []
+        trains, vehicles = [], []
         for vid, seen in self._seen.items():
             calls = sorted(
                 seen.calls.values(),
@@ -154,9 +162,69 @@ class EtaTracker:
             if train and train.t_bridge >= now - PAST_GRACE:
                 trains.append(train)
 
+            vehicle_calls = _with_departures(calls, train, self._stations)
+            last = vehicle_calls[-1] if vehicle_calls else None
+            if last and (last.dep or last.arr) >= now - PAST_GRACE:
+                vehicles.append(
+                    Vehicle(
+                        id=vid,
+                        direction=seen.direction,
+                        destination=seen.destination,
+                        calls=vehicle_calls,
+                    )
+                )
+
         return BridgeSnapshot(
             generated_at=now,
             bridge_id=self._bridge.id,
             bridge_chainage_m=self._bridge.chainage_m,
             trains=sorted(trains, key=lambda t: t.t_bridge),
+            vehicles=vehicles,
         )
+
+
+def _with_departures(
+    calls: list[TimingPoint], train: Train | None, stations: list[Station]
+) -> list[TimingPoint]:
+    """Calls in travel order with `dep` filled in (estimated), for the map.
+
+    For trains that pass the bridge (`train` is set):
+    - the bridge ETA's `prev` replaces (or, if it was back-calculated, adds)
+      the station before the bridge, so the moving icon and countdown agree;
+    - the route station before the first known call is added with a
+      back-calculated departure, so a train is drawn approaching its first
+      known station rather than appearing there out of nowhere.
+    Other trains (e.g. Enfield Town services that join the route at Hackney
+    Downs) get neither: stepping back along *our* route would be wrong for them.
+    """
+    if train:
+        by_station = {c.station_id: c for c in calls}
+        by_station[train.prev.station_id] = train.prev
+        reverse = train.direction == "up"
+        calls = sorted(by_station.values(), key=lambda c: c.chainage_m, reverse=reverse)
+
+    out = []
+    for i, c in enumerate(calls):
+        dep = c.dep or (c.arr + DWELL if c.arr else None)
+        next_arr = calls[i + 1].arr if i + 1 < len(calls) else None
+        if dep and next_arr and dep >= next_arr:  # same guard as compute_train
+            dep = min(c.arr or next_arr, next_arr)
+        out.append(c.model_copy(update={"dep": dep}))
+
+    if train and out and out[0].arr:
+        ids = [s.id for s in stations]
+        i = ids.index(out[0].station_id) + (1 if train.direction == "up" else -1)
+        if 0 <= i < len(stations):
+            before = stations[i]
+            seconds = abs(out[0].chainage_m - before.chainage_m) / _speed_from(out)
+            dep = out[0].arr - timedelta(seconds=seconds)
+            out.insert(
+                0,
+                TimingPoint(
+                    station_id=before.id,
+                    chainage_m=before.chainage_m,
+                    arr=None,
+                    dep=dep,
+                ),
+            )
+    return out

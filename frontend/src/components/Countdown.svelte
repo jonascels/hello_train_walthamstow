@@ -6,11 +6,13 @@
   let {
     label,
     arrow,
+    colour,
     trains,
     now,
   }: {
     label: string; // where trains in this direction are heading
     arrow: "←" | "→";
+    colour: string; // matches this direction's train icons on the map
     trains: Train[]; // this direction only, soonest first
     now: number; // server-corrected ms
   } = $props();
@@ -35,7 +37,10 @@
 </script>
 
 <section class="countdown">
-  <h2>{arrow === "←" ? `← ${label}` : `${label} →`}</h2>
+  <h2>
+    <span class="dot" style:background={colour}></span>
+    {arrow === "←" ? `← ${label}` : `${label} →`}
+  </h2>
   {#if !next}
     <p class="time none">—</p>
     <p class="sub">No trains due</p>
@@ -61,7 +66,17 @@
     margin: 0;
     font-size: 1.1rem;
     font-weight: 600;
-    color: #823a62; /* Weaver line */
+    color: #333;
+  }
+  .dot {
+    display: inline-block;
+    width: 0.8rem;
+    height: 0.8rem;
+    margin-right: 0.3rem;
+    border-radius: 50%;
+    border: 2px solid #fff;
+    box-shadow: 0 0 0 1px #ccc;
+    vertical-align: -0.05rem;
   }
   .time {
     margin: 0.1rem 0;

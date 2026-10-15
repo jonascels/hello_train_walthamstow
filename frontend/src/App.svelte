@@ -6,6 +6,7 @@
   import StatusBar from "./components/StatusBar.svelte";
   import TrainMap from "./components/TrainMap.svelte";
   import { fetchConfig, fetchTrack, type AppConfig, type TrackGeometry } from "./lib/api";
+  import { DIRECTION_COLOUR } from "./lib/colors";
   import { live } from "./lib/live.svelte";
 
   let config = $state<AppConfig | null>(null);
@@ -31,7 +32,11 @@
 <main>
   <div class="map-area">
     {#if config && geometry}
-      <TrainMap {geometry} timingBridgeId={config.timing_bridge_id} />
+      <TrainMap
+        {geometry}
+        timingBridgeId={config.timing_bridge_id}
+        vehicles={live.update?.snapshot?.vehicles ?? []}
+      />
     {:else}
       <p class="message">{error || "Loading…"}</p>
     {/if}
@@ -39,8 +44,20 @@
   <div class="panel">
     <div class="countdowns">
       <!-- Liverpool Street is west (left on the map), Chingford east (right). -->
-      <Countdown label={londonEnd} arrow="←" trains={upTrains} now={live.now} />
-      <Countdown label={countryEnd} arrow="→" trains={downTrains} now={live.now} />
+      <Countdown
+        label={londonEnd}
+        arrow="←"
+        colour={DIRECTION_COLOUR.up}
+        trains={upTrains}
+        now={live.now}
+      />
+      <Countdown
+        label={countryEnd}
+        arrow="→"
+        colour={DIRECTION_COLOUR.down}
+        trains={downTrains}
+        now={live.now}
+      />
     </div>
     <StatusBar update={live.update} connection={live.connection} />
   </div>

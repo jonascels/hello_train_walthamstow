@@ -22,11 +22,20 @@ export type Train = {
   t_bridge: string; // estimated time at the bridge
 };
 
+// A train to draw on the map: every known timing point, in travel order.
+export type Vehicle = {
+  id: string;
+  direction: Direction;
+  destination: string;
+  calls: TimingPoint[]; // dep always set; arr may be null
+};
+
 export type BridgeSnapshot = {
   generated_at: string;
   bridge_id: string;
   bridge_chainage_m: number;
-  trains: Train[]; // soonest first
+  trains: Train[]; // bridge ETAs for the countdowns, soonest first
+  vehicles: Vehicle[]; // everything on the route, for the map
 };
 
 export type LiveUpdate = {

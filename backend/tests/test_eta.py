@@ -205,3 +205,58 @@ def test_snapshot_from_real_tfl_data() -> None:
     for tr in snap.trains:
         assert tr.t_bridge >= now - timedelta(seconds=60)
         assert tr.prev.dep <= tr.t_bridge <= tr.next.arr
+
+
+# --- Vehicles for the map ------------------------------------------------------------
+
+
+def test_vehicle_keeps_passed_stations_and_fills_departures() -> None:
+    tracker = EtaTracker(GEO)
+    calls = [
+        call("910GSTJMSST", "18:58:00"),
+        call("910GWLTWCEN", "19:01:00"),
+        call("910GWDST", "19:04:00"),
+    ]
+    tracker.update([service("v1", "down", calls, "18:57:00")], t("18:57:00"))
+    snap = tracker.update([service("v1", "down", calls[2:], "19:02:00")], t("19:02:00"))
+    (vehicle,) = snap.vehicles
+    assert [c.station_id for c in vehicle.calls] == [
+        "910GCLAPTON",  # added: back-calculated, so the icon approaches St James St
+        "910GSTJMSST",
+        "910GWLTWCEN",
+        "910GWDST",
+    ]
+    assert vehicle.calls[0].arr is None
+    assert vehicle.calls[0].dep < t("18:58:00")
+    assert vehicle.calls[1].dep == t("18:58:00") + DWELL
+    # The station before the bridge matches the countdown's estimate.
+    assert vehicle.calls[2] == snap.trains[0].prev
+
+
+def test_vehicle_includes_back_calculated_station_before_bridge() -> None:
+    tracker = EtaTracker(GEO)
+    calls = [call("910GWDST", "19:04:00"), call("910GHGHMSPK", "19:07:00")]
+    snap = tracker.update([service("v1", "down", calls, "19:02:00")], t("19:02:00"))
+    first = snap.vehicles[0].calls[0]
+    assert first.station_id == "910GWLTWCEN"
+    assert first.arr is None and first.dep is not None
+
+
+def test_vehicle_dropped_after_final_call() -> None:
+    tracker = EtaTracker(GEO)
+    calls = [call("910GHGHMSPK", "19:07:00"), call("910GCHINGFD", "19:13:00")]
+    tracker.update([service("v1", "down", calls, "19:00:00")], t("19:00:00"))
+    assert tracker.update([], t("19:13:20")).vehicles
+    assert not tracker.update([], t("19:15:00")).vehicles
+
+
+def test_no_back_calculated_station_for_trains_not_passing_bridge() -> None:
+    """An up Enfield Town train joins our route at Hackney Downs from another
+    line, so don't draw it coming from Clapton."""
+    tracker = EtaTracker(GEO)
+    calls = [call("910GHAKNYNM", "19:12:00"), call("910GBTHNLGR", "19:16:00")]
+    snap = tracker.update([service("v1", "up", calls, "19:00:00")], t("19:00:00"))
+    assert [c.station_id for c in snap.vehicles[0].calls] == [
+        "910GHAKNYNM",
+        "910GBTHNLGR",
+    ]

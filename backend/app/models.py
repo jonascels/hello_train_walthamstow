@@ -51,11 +51,26 @@ class Train(BaseModel):
     t_bridge: datetime  # estimated time at the bridge
 
 
+class Vehicle(BaseModel):
+    """A train to draw on the map, with every timing point we know for it.
+
+    `calls` are in travel order, including stations already passed (as far as
+    we've seen them), with `dep` always set (estimated from arrival + dwell).
+    `arr` may be None for a back-calculated station before the bridge.
+    """
+
+    id: str
+    direction: Direction
+    destination: str
+    calls: list[TimingPoint]
+
+
 class BridgeSnapshot(BaseModel):
     generated_at: datetime  # server time; the frontend uses it for clock offset
     bridge_id: str
     bridge_chainage_m: float
-    trains: list[Train]  # soonest first
+    trains: list[Train]  # bridge ETAs for the countdowns, soonest first
+    vehicles: list[Vehicle]  # everything on the route, for the map
 
 
 class LiveUpdate(BaseModel):
