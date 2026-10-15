@@ -65,38 +65,47 @@
   .countdown {
     flex: 1;
     min-width: 0;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
     padding: 0.75rem 1rem;
     text-align: center;
+    /* Big enough to read across a room; scales with the screen. */
+    --time-size: clamp(3rem, 11vmin, 7.5rem);
   }
   h2 {
     margin: 0;
-    font-size: 1.1rem;
+    font-size: clamp(1.1rem, 3.2vmin, 1.8rem);
     font-weight: 600;
-    color: #333;
   }
   .train {
-    height: 1.6rem;
-    margin: 0 0.3rem;
-    vertical-align: -0.35rem;
+    height: 1.6em;
+    margin: 0 0.3em;
+    vertical-align: -0.35em;
+  }
+  /* Its dark outline disappears on a dark panel; add a soft glow. */
+  :global(main.dark) .train {
+    filter: drop-shadow(0 0 2px rgb(255 255 255 / 0.6));
   }
   .time {
     margin: 0.1rem 0;
-    font-size: 3.5rem;
+    font-size: var(--time-size);
     font-weight: 700;
     font-variant-numeric: tabular-nums; /* digits don't jiggle as they change */
     line-height: 1.1;
   }
   .passing {
-    color: #c26b00;
-    font-size: 2.4rem;
-    line-height: 1.6;
+    color: var(--passing);
+    /* Smaller text, same line height, so the layout doesn't jump. */
+    font-size: calc(var(--time-size) * 0.6);
+    line-height: calc(var(--time-size) * 1.1);
   }
   .none {
-    color: #999;
+    color: var(--muted);
   }
   .sub {
     margin: 0;
-    color: #555;
-    font-size: 0.95rem;
+    color: var(--muted);
+    font-size: clamp(0.95rem, 2.6vmin, 1.4rem);
   }
 </style>

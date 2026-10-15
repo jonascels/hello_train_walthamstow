@@ -21,7 +21,13 @@
     geometry,
     timingBridgeId,
     vehicles,
-  }: { geometry: TrackGeometry; timingBridgeId: string; vehicles: Vehicle[] } = $props();
+    dark,
+  }: {
+    geometry: TrackGeometry;
+    timingBridgeId: string;
+    vehicles: Vehicle[];
+    dark: boolean; // fixed for this map's lifetime; App re-creates it on change
+  } = $props();
 
   // Redraw train positions at most this often (they move ~1 m per 50 ms).
   const FRAME_MS = 50;
@@ -70,6 +76,10 @@
   }
 
   onMount(() => {
+    // Map colours that change with light/dark mode.
+    const c = dark
+      ? { station: "#15191e", label: "#e4e7eb", halo: "#15191e", bridgeLabel: "#ffc46b" }
+      : { station: "#ffffff", label: "#333333", halo: "#ffffff", bridgeLabel: "#b26b00" };
     const track = new TrackLine(geometry.track, geometry.track_length_m);
     let frame = 0;
     const timingBridge = geometry.bridges.find((b) => b.id === timingBridgeId)!;
@@ -78,7 +88,7 @@
 
     const map = new maplibregl.Map({
       container,
-      style: "https://tiles.openfreemap.org/styles/positron",
+      style: `https://tiles.openfreemap.org/styles/${dark ? "dark" : "positron"}`,
       center: [timingBridge.lon, timingBridge.lat],
       zoom: 14,
       attributionControl: { compact: true },
@@ -110,7 +120,7 @@
         source: "stations",
         paint: {
           "circle-radius": 6,
-          "circle-color": "#ffffff",
+          "circle-color": c.station,
           "circle-stroke-color": LINE_COLOUR,
           "circle-stroke-width": 3,
         },
@@ -126,7 +136,7 @@
           "text-offset": [0, 1.2],
           "text-anchor": "top",
         },
-        paint: { "text-color": "#333", "text-halo-color": "#fff", "text-halo-width": 2 },
+        paint: { "text-color": c.label, "text-halo-color": c.halo, "text-halo-width": 2 },
       });
 
       map.addSource("bridges", {
@@ -145,7 +155,7 @@
         paint: {
           // The timing bridge (West Ave) is larger and filled.
           "circle-radius": ["case", ["get", "timing"], 9, 6],
-          "circle-color": ["case", ["get", "timing"], BRIDGE_COLOUR, "#ffffff"],
+          "circle-color": ["case", ["get", "timing"], BRIDGE_COLOUR, c.station],
           "circle-stroke-color": BRIDGE_COLOUR,
           "circle-stroke-width": 3,
         },
@@ -168,7 +178,7 @@
           ],
           "text-allow-overlap": true,
         },
-        paint: { "text-color": "#b26b00", "text-halo-color": "#fff", "text-halo-width": 2 },
+        paint: { "text-color": c.bridgeLabel, "text-halo-color": c.halo, "text-halo-width": 2 },
       });
 
       // Fit the view to the stations near the timing bridge.

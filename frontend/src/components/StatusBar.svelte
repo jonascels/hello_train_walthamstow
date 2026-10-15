@@ -1,13 +1,27 @@
 <script lang="ts">
-  // Connection state, data freshness and attribution.
+  // Connection state, data freshness, screen wake lock and attribution.
   import { formatTime } from "../lib/clock";
   import type { Connection, LiveUpdate } from "../lib/live.svelte";
+  import type { WakeLockStatus } from "../lib/wakeLock.svelte";
 
-  let { update, connection }: { update: LiveUpdate | null; connection: Connection } =
+  let {
+    update,
+    connection,
+    wake,
+  }: { update: LiveUpdate | null; connection: Connection; wake: WakeLockStatus } =
     $props();
 
   const lastSuccess = $derived(
     update?.last_success ? formatTime(Date.parse(update.last_success), true) : null,
+  );
+  const wakeNote = $derived(
+    {
+      active: "",
+      off: "",
+      unsupported: "Screen may sleep (browser can't keep it on)",
+      insecure: "Screen may sleep (needs https)",
+      failed: "Screen may sleep",
+    }[wake],
   );
 </script>
 
@@ -21,6 +35,7 @@
   {:else if lastSuccess}
     <span>Updated {lastSuccess}</span>
   {/if}
+  {#if wakeNote}<span class="warn">· {wakeNote}</span>{/if}
   <span class="spacer"></span>
   <span>Times and positions are estimated · Powered by TfL Open Data</span>
 </footer>
@@ -30,11 +45,11 @@
     display: flex;
     align-items: center;
     flex-wrap: wrap;
-    gap: 0.5rem;
+    gap: 0.25rem 0.5rem;
     padding: 0.4rem 1rem;
     font-size: 0.8rem;
-    color: #666;
-    border-top: 1px solid #eee;
+    color: var(--muted);
+    border-top: 1px solid var(--border);
   }
   .spacer {
     flex: 1;
@@ -52,6 +67,6 @@
     background: #d23c3c;
   }
   .warn {
-    color: #b25000;
+    color: var(--warn);
   }
 </style>
