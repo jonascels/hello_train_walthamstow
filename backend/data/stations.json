@@ -1,0 +1,68 @@
+[
+  {
+    "id": "910GLIVST",
+    "name": "London Liverpool Street",
+    "lat": 51.517991,
+    "lon": -0.081426
+  },
+  {
+    "id": "910GBTHNLGR",
+    "name": "Bethnal Green",
+    "lat": 51.523917,
+    "lon": -0.059568
+  },
+  {
+    "id": "910GCAMHTH",
+    "name": "Cambridge Heath (London)",
+    "lat": 51.531973,
+    "lon": -0.057279
+  },
+  {
+    "id": "910GLONFLDS",
+    "name": "London Fields",
+    "lat": 51.541153,
+    "lon": -0.057753
+  },
+  {
+    "id": "910GHAKNYNM",
+    "name": "Hackney Downs",
+    "lat": 51.548757,
+    "lon": -0.060819
+  },
+  {
+    "id": "910GCLAPTON",
+    "name": "Clapton",
+    "lat": 51.561644,
+    "lon": -0.057025
+  },
+  {
+    "id": "910GSTJMSST",
+    "name": "St James Street (London)",
+    "lat": 51.580981,
+    "lon": -0.032918
+  },
+  {
+    "id": "910GWLTWCEN",
+    "name": "Walthamstow Central",
+    "lat": 51.582919,
+    "lon": -0.019815
+  },
+  {
+    "id": "910GWDST",
+    "name": "Wood Street",
+    "lat": 51.58658,
+    "lon": -0.002405
+  },
+  {
+    "id": "910GHGHMSPK",
+    "name": "Highams Park",
+    "lat": 51.60835,
+    "lon": -0.000222
+  },
+  {
+    "id": "910GCHINGFD",
+    "name": "Chingford",
+    "lat": 51.633087,
+    "lon": 0.009897
+  }
+]

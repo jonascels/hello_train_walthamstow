@@ -1,49 +1,41 @@
 <script lang="ts">
-  // Milestone 1 smoke test: proves the dev proxy reaches the backend over
-  // both HTTP (/api/config) and WebSocket (/ws).
+  // Layout: map fills the screen; countdowns (milestone 5) will sit on top.
   import { onMount } from "svelte";
+  import TrainMap from "./components/TrainMap.svelte";
+  import { fetchConfig, fetchTrack, type AppConfig, type TrackGeometry } from "./lib/api";
 
-  type Bridge = { id: string; name: string; lat: number; lon: number };
+  let config = $state<AppConfig | null>(null);
+  let geometry = $state<TrackGeometry | null>(null);
+  let error = $state("");
 
-  let lineId = $state("…");
-  let bridges = $state<Bridge[]>([]);
-  let wsStatus = $state("connecting");
-  let serverTime = $state("");
-
-  onMount(() => {
-    fetch("/api/config")
-      .then((r) => r.json())
-      .then((cfg) => {
-        lineId = cfg.line_id;
-        bridges = cfg.bridges;
-      })
-      .catch(() => (lineId = "backend unreachable"));
-
-    // Same host as the page; Vite proxies /ws to the backend in dev.
-    const proto = location.protocol === "https:" ? "wss" : "ws";
-    const socket = new WebSocket(`${proto}://${location.host}/ws`);
-    socket.onopen = () => (wsStatus = "connected");
-    socket.onclose = () => (wsStatus = "disconnected");
-    socket.onmessage = (e) => (serverTime = JSON.parse(e.data).server_time);
-
-    return () => socket.close();
+  onMount(async () => {
+    try {
+      [config, geometry] = await Promise.all([fetchConfig(), fetchTrack()]);
+    } catch (e) {
+      error = `Could not reach the backend: ${e}`;
+    }
   });
 </script>
 
 <main>
-  <h1>Train Viewer</h1>
-  <p>Line: <strong>{lineId}</strong></p>
-  <ul>
-    {#each bridges as b (b.id)}
-      <li>{b.name} ({b.lat}, {b.lon})</li>
-    {/each}
-  </ul>
-  <p>WebSocket: {wsStatus} {serverTime && `· server time ${serverTime}`}</p>
+  {#if config && geometry}
+    <TrainMap {geometry} timingBridgeId={config.timing_bridge_id} />
+  {:else}
+    <p class="message">{error || "Loading…"}</p>
+  {/if}
 </main>
 
 <style>
-  main {
+  :global(html, body) {
+    margin: 0;
+    height: 100%;
     font-family: system-ui, sans-serif;
+  }
+  main {
+    position: fixed;
+    inset: 0;
+  }
+  .message {
     padding: 2rem;
   }
 </style>

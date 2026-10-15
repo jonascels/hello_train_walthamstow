@@ -1,0 +1,99 @@
+{
+  "line_id": "weaver",
+  "track_length_m": 16760.5,
+  "stations": [
+    {
+      "id": "910GLIVST",
+      "name": "London Liverpool Street",
+      "lat": 51.517991,
+      "lon": -0.081426,
+      "chainage_m": 7.9
+    },
+    {
+      "id": "910GBTHNLGR",
+      "name": "Bethnal Green",
+      "lat": 51.523917,
+      "lon": -0.059568,
+      "chainage_m": 1865.5
+    },
+    {
+      "id": "910GCAMHTH",
+      "name": "Cambridge Heath (London)",
+      "lat": 51.531973,
+      "lon": -0.057279,
+      "chainage_m": 2898.4
+    },
+    {
+      "id": "910GLONFLDS",
+      "name": "London Fields",
+      "lat": 51.541153,
+      "lon": -0.057753,
+      "chainage_m": 3926.4
+    },
+    {
+      "id": "910GHAKNYNM",
+      "name": "Hackney Downs",
+      "lat": 51.548757,
+      "lon": -0.060819,
+      "chainage_m": 4811.9
+    },
+    {
+      "id": "910GCLAPTON",
+      "name": "Clapton",
+      "lat": 51.561644,
+      "lon": -0.057025,
+      "chainage_m": 6332.5
+    },
+    {
+      "id": "910GSTJMSST",
+      "name": "St James Street (London)",
+      "lat": 51.580981,
+      "lon": -0.032918,
+      "chainage_m": 9106.2
+    },
+    {
+      "id": "910GWLTWCEN",
+      "name": "Walthamstow Central",
+      "lat": 51.582919,
+      "lon": -0.019815,
+      "chainage_m": 10043.7
+    },
+    {
+      "id": "910GWDST",
+      "name": "Wood Street",
+      "lat": 51.58658,
+      "lon": -0.002405,
+      "chainage_m": 11335.8
+    },
+    {
+      "id": "910GHGHMSPK",
+      "name": "Highams Park",
+      "lat": 51.60835,
+      "lon": -0.000222,
+      "chainage_m": 13851.6
+    },
+    {
+      "id": "910GCHINGFD",
+      "name": "Chingford",
+      "lat": 51.633087,
+      "lon": 0.009897,
+      "chainage_m": 16753.4
+    }
+  ],
+  "bridges": [
+    {
+      "id": "west-ave",
+      "name": "West Ave",
+      "lat": 51.583355,
+      "lon": -0.015871,
+      "chainage_m": 10321.3
+    },
+    {
+      "id": "east-ave",
+      "name": "East Ave",
+      "lat": 51.583491,
+      "lon": -0.014558,
+      "chainage_m": 10413.5
+    }
+  ]
+}

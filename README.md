@@ -24,6 +24,17 @@ cd frontend && npm run dev                     # http://localhost:5173
 
 Open http://localhost:5173. Vite proxies `/api` and `/ws` to the backend.
 
+## Track geometry
+
+`backend/data/` (track, stations, chainages) is generated once and committed.
+Rebuild it only if the bridges or route change:
+
+```bash
+cd backend && python -m scripts.build_geometry
+```
+
+It pulls the track from OpenStreetMap (Overpass) and the stations from TfL.
+
 ## Test
 
 ```bash

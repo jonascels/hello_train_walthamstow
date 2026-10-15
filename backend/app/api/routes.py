@@ -5,6 +5,7 @@ from datetime import UTC, datetime
 from fastapi import APIRouter
 
 from app.config import Bridge, get_settings
+from app.services.geometry import Geometry, load_geometry
 
 router = APIRouter(prefix="/api")
 
@@ -23,3 +24,9 @@ async def config() -> dict[str, str | list[Bridge]]:
         "bridges": settings.bridges,
         "timing_bridge_id": settings.timing_bridge_id,
     }
+
+
+@router.get("/track")
+async def track() -> Geometry:
+    """Track line, stations and bridges with chainages, for drawing the map."""
+    return load_geometry()
