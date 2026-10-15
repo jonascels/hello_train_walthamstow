@@ -1,0 +1,17 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "backend",
+      "runtimeExecutable": "/opt/homebrew/Caskroom/miniforge/base/bin/conda",
+      "runtimeArgs": ["run", "--no-capture-output", "-n", "train-viewer", "--cwd", "backend", "uvicorn", "app.main:app", "--reload", "--port", "8000"],
+      "port": 8000
+    },
+    {
+      "name": "frontend",
+      "runtimeExecutable": "/opt/homebrew/Caskroom/miniforge/base/bin/conda",
+      "runtimeArgs": ["run", "--no-capture-output", "-n", "train-viewer", "--cwd", "frontend", "npm", "run", "dev"],
+      "port": 5173
+    }
+  ]
+}
