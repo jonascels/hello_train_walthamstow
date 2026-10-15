@@ -1,0 +1,8 @@
+# Runtime dependencies for the deployed server (see Dockerfile).
+# Pinned to the versions tested in the `train-viewer` conda env.
+# shapely/pyproj are only needed for scripts/build_geometry.py, not at runtime.
+fastapi==0.143.2
+uvicorn[standard]==0.54.0
+httpx==0.28.1
+pydantic==2.14.1
+pydantic-settings==2.16.0

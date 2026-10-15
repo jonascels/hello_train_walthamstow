@@ -32,6 +32,9 @@ class Settings(BaseSettings):
     timing_bridge_id: str = "west-ave"
     # TfL asks clients not to poll faster than this; their responses are cached ~30 s.
     poll_interval_s: int = Field(default=30, ge=20)
+    # Built frontend (`npm run build`), served by FastAPI in production.
+    # In dev Vite serves it instead, so it's fine if this doesn't exist.
+    frontend_dist: Path = REPO_ROOT / "frontend" / "dist"
 
     @model_validator(mode="after")
     def _timing_bridge_exists(self) -> "Settings":

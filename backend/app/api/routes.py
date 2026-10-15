@@ -22,7 +22,9 @@ async def config() -> dict[str, str | list[Bridge]]:
     settings = get_settings()
     return {
         "line_id": settings.line_id,
-        "bridges": settings.bridges,
+        # From the committed geometry, so production needs no BRIDGES env var
+        # (BRIDGES is only read by scripts/build_geometry.py).
+        "bridges": [Bridge(**b.model_dump()) for b in load_geometry().bridges],
         "timing_bridge_id": settings.timing_bridge_id,
     }
 

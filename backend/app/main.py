@@ -9,6 +9,7 @@ import httpx
 from fastapi import FastAPI
 
 from app.api import routes, ws
+from app.api.static import FrontendFiles
 from app.config import get_settings
 from app.services.geometry import load_geometry
 from app.services.poller import Poller
@@ -34,3 +35,8 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
 app = FastAPI(title="Train Viewer", lifespan=lifespan)
 app.include_router(routes.router)
 app.include_router(ws.router)
+
+# Production: serve the built frontend from the same origin, so /api and /ws
+# need no CORS or proxy. Mounted last so the API routes take priority.
+if (dist := get_settings().frontend_dist).is_dir():
+    app.mount("/", FrontendFiles(directory=dist, html=True), name="frontend")
