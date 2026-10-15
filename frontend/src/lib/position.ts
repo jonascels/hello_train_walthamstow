@@ -50,4 +50,18 @@ export class TrackLine {
     const point = along(this.#line, chainageM * this.#scale, { units: "meters" });
     return point.geometry.coordinates as [number, number];
   }
+
+  /**
+   * Compass bearing (degrees clockwise from north) of travel at `chainageM`,
+   * for a train moving towards higher chainage (sign +1) or lower (sign −1).
+   */
+  bearingAt(chainageM: number, sign: 1 | -1): number {
+    const LOOK_M = 20;
+    const [lon1, lat1] = this.lngLatAt(chainageM - sign * LOOK_M);
+    const [lon2, lat2] = this.lngLatAt(chainageM + sign * LOOK_M);
+    // Flat-earth approximation is plenty over 40 m.
+    const dx = (lon2 - lon1) * Math.cos((lat1 * Math.PI) / 180);
+    const dy = lat2 - lat1;
+    return (Math.atan2(dx, dy) * 180) / Math.PI;
+  }
 }

@@ -2,6 +2,7 @@
   // One direction's countdown to the next train at the bridge.
   import { formatTime } from "../lib/clock";
   import type { Train } from "../lib/live.svelte";
+  import { trainSvgUrl } from "../lib/trainIcon";
 
   let {
     label,
@@ -38,8 +39,13 @@
 
 <section class="countdown">
   <h2>
-    <span class="dot" style:background={colour}></span>
-    {arrow === "←" ? `← ${label}` : `${label} →`}
+    {#if arrow === "←"}
+      <img class="train" src={trainSvgUrl(colour, "left")} alt="" />
+      {`← ${label}`}
+    {:else}
+      {`${label} →`}
+      <img class="train" src={trainSvgUrl(colour, "right")} alt="" />
+    {/if}
   </h2>
   {#if !next}
     <p class="time none">—</p>
@@ -68,15 +74,10 @@
     font-weight: 600;
     color: #333;
   }
-  .dot {
-    display: inline-block;
-    width: 0.8rem;
-    height: 0.8rem;
-    margin-right: 0.3rem;
-    border-radius: 50%;
-    border: 2px solid #fff;
-    box-shadow: 0 0 0 1px #ccc;
-    vertical-align: -0.05rem;
+  .train {
+    height: 1.6rem;
+    margin: 0 0.3rem;
+    vertical-align: -0.35rem;
   }
   .time {
     margin: 0.1rem 0;

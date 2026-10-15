@@ -13,6 +13,7 @@
   import { BRIDGE_COLOUR, DIRECTION_COLOUR, LINE_COLOUR } from "../lib/colors";
   import type { Vehicle } from "../lib/live.svelte";
   import { chainageAt, TrackLine } from "../lib/position";
+  import { loadTrainImage } from "../lib/trainIcon";
 
   maplibregl.setWorkerUrl(workerUrl);
 
@@ -52,9 +53,16 @@
     for (const v of vehicles) {
       const chainage = chainageAt(v, nowMs);
       if (chainage === null) continue;
+      // The icon is drawn facing east (bearing 90°). Rotate it to follow the
+      // track; if that would turn it upside down, use the mirrored
+      // (west-facing) icon instead and rotate that.
+      const bearing = track.bearingAt(chainage, v.direction === "down" ? 1 : -1);
+      const fromEast = ((bearing - 90 + 540) % 360) - 180; // −180…180
+      const facing = Math.abs(fromEast) <= 90 ? "right" : "left";
+      const rotate = facing === "right" ? fromEast : ((fromEast + 360) % 360) - 180;
       features.push({
         type: "Feature",
-        properties: { direction: v.direction, destination: v.destination },
+        properties: { icon: `train-${v.direction}-${facing}`, rotate },
         geometry: { type: "Point", coordinates: track.lngLatAt(chainage) },
       });
     }
@@ -76,7 +84,16 @@
       attributionControl: { compact: true },
     });
 
-    map.on("load", () => {
+    map.on("load", async () => {
+      // One image per direction (colour) and facing. Rasterised at 2× so
+      // they stay crisp on high-DPI tablet screens.
+      for (const direction of ["up", "down"] as const) {
+        for (const facing of ["left", "right"] as const) {
+          const img = await loadTrainImage(DIRECTION_COLOUR[direction], facing, 2);
+          map.addImage(`train-${direction}-${facing}`, img, { pixelRatio: 2 });
+        }
+      }
+
       map.addSource("track", { type: "geojson", data: geometry.track });
       map.addLayer({
         id: "track",
@@ -162,23 +179,19 @@
       for (const p of [...nearby, timingBridge]) bounds.extend([p.lon, p.lat]);
       map.fitBounds(bounds, { padding: 60, animate: false });
 
-      // Train icons, on top of everything else.
+      // Train icons (cartoon trains), on top of everything else.
       map.addSource("trains", { type: "geojson", data: trainFeatures(track, serverNow()) });
       map.addLayer({
         id: "trains",
-        type: "circle",
+        type: "symbol",
         source: "trains",
-        paint: {
-          "circle-radius": 9,
-          "circle-color": [
-            "match",
-            ["get", "direction"],
-            "up",
-            DIRECTION_COLOUR.up,
-            DIRECTION_COLOUR.down,
-          ],
-          "circle-stroke-color": "#ffffff",
-          "circle-stroke-width": 3,
+        layout: {
+          "icon-image": ["get", "icon"],
+          "icon-rotate": ["get", "rotate"],
+          "icon-rotation-alignment": "map",
+          "icon-size": 0.75,
+          "icon-allow-overlap": true,
+          "icon-ignore-placement": true,
         },
       });
 
