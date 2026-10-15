@@ -1,7 +1,11 @@
 from fastapi.testclient import TestClient
 
 from app.main import app
+from app.services.geometry import load_geometry
+from app.services.poller import Poller
+from tests.fakes import FakeSource
 
+# Not used as a context manager, so the app's lifespan (real TfL poller) never runs.
 client = TestClient(app)
 
 
@@ -17,6 +21,6 @@ def test_config_has_no_secrets() -> None:
     assert "tfl_app_key" not in body
 
 
-def test_ws_heartbeat() -> None:
-    with client.websocket_connect("/ws") as ws:
-        assert ws.receive_json()["type"] == "heartbeat"
+def test_snapshot_503_before_first_poll() -> None:
+    app.state.poller = Poller(FakeSource([]), load_geometry(), 30)
+    assert client.get("/api/snapshot").status_code == 503

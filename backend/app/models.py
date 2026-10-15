@@ -56,3 +56,14 @@ class BridgeSnapshot(BaseModel):
     bridge_id: str
     bridge_chainage_m: float
     trains: list[Train]  # soonest first
+
+
+class LiveUpdate(BaseModel):
+    """What the WebSocket sends after every poll (and on connect)."""
+
+    type: Literal["update"] = "update"
+    server_time: datetime  # when this message was sent; for clock offset
+    source: str  # data attribution, e.g. "TfL"
+    snapshot: BridgeSnapshot | None  # None until the first successful poll
+    last_success: datetime | None
+    last_error: str | None  # set when the latest poll failed (data is stale)

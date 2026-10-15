@@ -6,7 +6,7 @@ import logging
 from datetime import UTC, datetime
 from zoneinfo import ZoneInfo
 
-from app.models import BridgeSnapshot
+from app.models import BridgeSnapshot, LiveUpdate
 from app.services.eta import EtaTracker
 from app.services.geometry import Geometry
 from app.sources.base import PredictionSource
@@ -26,6 +26,33 @@ class Poller:
         self.snapshot: BridgeSnapshot | None = None
         self.last_success: datetime | None = None
         self.last_error: str | None = None
+        # One queue per connected WebSocket client.
+        self._subscribers: set[asyncio.Queue[LiveUpdate]] = set()
+
+    def live_update(self) -> LiveUpdate:
+        return LiveUpdate(
+            server_time=datetime.now(UTC),
+            source=self.source.name,
+            snapshot=self.snapshot,
+            last_success=self.last_success,
+            last_error=self.last_error,
+        )
+
+    def subscribe(self) -> asyncio.Queue[LiveUpdate]:
+        queue: asyncio.Queue[LiveUpdate] = asyncio.Queue(maxsize=1)
+        self._subscribers.add(queue)
+        return queue
+
+    def unsubscribe(self, queue: asyncio.Queue[LiveUpdate]) -> None:
+        self._subscribers.discard(queue)
+
+    def _publish(self) -> None:
+        update = self.live_update()
+        for queue in self._subscribers:
+            # A slow client only needs the newest update: drop any unsent one.
+            if queue.full():
+                queue.get_nowait()
+            queue.put_nowait(update)
 
     async def poll_once(self) -> None:
         try:
@@ -33,12 +60,13 @@ class Poller:
         except Exception as exc:  # noqa: BLE001 — never let one bad poll stop the loop
             self.last_error = repr(exc)
             log.warning("%s fetch failed: %r", self.source.name, exc)
-            return
-        now = datetime.now(UTC)
-        self.snapshot = self.tracker.update(services, now)
-        self.last_success = now
-        self.last_error = None
-        self._log_snapshot(len(services))
+        else:
+            now = datetime.now(UTC)
+            self.snapshot = self.tracker.update(services, now)
+            self.last_success = now
+            self.last_error = None
+            self._log_snapshot(len(services))
+        self._publish()
 
     async def run(self) -> None:
         while True:
