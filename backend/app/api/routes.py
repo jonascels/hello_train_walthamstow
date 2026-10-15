@@ -2,9 +2,10 @@
 
 from datetime import UTC, datetime
 
-from fastapi import APIRouter
+from fastapi import APIRouter, HTTPException, Request
 
 from app.config import Bridge, get_settings
+from app.models import BridgeSnapshot
 from app.services.geometry import Geometry, load_geometry
 
 router = APIRouter(prefix="/api")
@@ -30,3 +31,12 @@ async def config() -> dict[str, str | list[Bridge]]:
 async def track() -> Geometry:
     """Track line, stations and bridges with chainages, for drawing the map."""
     return load_geometry()
+
+
+@router.get("/snapshot")
+async def snapshot(request: Request) -> BridgeSnapshot:
+    """Latest trains and their estimated times at the timing bridge."""
+    poller = getattr(request.app.state, "poller", None)
+    if poller is None or poller.snapshot is None:
+        raise HTTPException(503, "No data yet")
+    return poller.snapshot

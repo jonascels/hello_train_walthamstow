@@ -94,6 +94,6 @@ async def test_poller_survives_errors() -> None:
         geometry = load_geometry()
         poller = Poller(TflSource(client, "weaver", "", geometry), geometry, 30)
         await poller.poll_once()
-    assert poller.trains == []
+    assert poller.snapshot is None
     assert poller.last_success is None
     assert "503" in (poller.last_error or "")

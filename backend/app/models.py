@@ -34,3 +34,25 @@ class TrainService(BaseModel):
     destination: str
     calls: list[TimingPoint]
     observed_at: datetime  # when the source produced this prediction
+
+
+class Train(BaseModel):
+    """A train that will pass (or has just passed) the timing bridge.
+
+    `prev`/`next` are the stations either side of the bridge in travel order;
+    `prev.dep` and `next.arr` are always set (estimated where necessary).
+    """
+
+    id: str
+    direction: Direction
+    destination: str
+    prev: TimingPoint
+    next: TimingPoint
+    t_bridge: datetime  # estimated time at the bridge
+
+
+class BridgeSnapshot(BaseModel):
+    generated_at: datetime  # server time; the frontend uses it for clock offset
+    bridge_id: str
+    bridge_chainage_m: float
+    trains: list[Train]  # soonest first
