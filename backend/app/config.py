@@ -3,7 +3,7 @@
 from functools import lru_cache
 from pathlib import Path
 
-from pydantic import BaseModel, model_validator
+from pydantic import BaseModel, Field, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
@@ -30,7 +30,8 @@ class Settings(BaseSettings):
     # The one bridge whose chainage the (single) countdown per direction uses.
     # The other bridges are only drawn on the map.
     timing_bridge_id: str = "west-ave"
-    poll_interval_s: int = 30
+    # TfL asks clients not to poll faster than this; their responses are cached ~30 s.
+    poll_interval_s: int = Field(default=30, ge=20)
 
     @model_validator(mode="after")
     def _timing_bridge_exists(self) -> "Settings":
