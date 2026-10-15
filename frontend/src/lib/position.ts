@@ -38,16 +38,21 @@ export function chainageAt(vehicle: Vehicle, nowMs: number): number | null {
 export class TrackLine {
   #line: GeoJSON.Feature<GeoJSON.LineString>;
   #scale: number;
+  #lengthM: number; // as Turf measures it
 
   constructor(line: GeoJSON.Feature<GeoJSON.LineString>, trackLengthM: number) {
     this.#line = line;
+    this.#lengthM = length(line, { units: "meters" });
     // Chainage is in British National Grid metres; Turf measures on the
     // globe. They differ by ~0.04% here, so rescale to keep stations on spot.
-    this.#scale = length(line, { units: "meters" }) / trackLengthM;
+    this.#scale = this.#lengthM / trackLengthM;
   }
 
   lngLatAt(chainageM: number): [number, number] {
-    const point = along(this.#line, chainageM * this.#scale, { units: "meters" });
+    // Clamp to the track: Turf's along() throws on a negative distance, which
+    // happens when looking just behind a train at Liverpool Street (7.9 m).
+    const metres = Math.min(Math.max(chainageM * this.#scale, 0), this.#lengthM);
+    const point = along(this.#line, metres, { units: "meters" });
     return point.geometry.coordinates as [number, number];
   }
 

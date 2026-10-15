@@ -53,24 +53,35 @@
     };
   }
 
+  // Vehicles we've already warned about, so a bad one doesn't flood the console.
+  const warned = new Set<string>();
+
   // Current estimated position of every vehicle we can place.
   function trainFeatures(track: TrackLine, nowMs: number) {
     const features: GeoJSON.Feature<GeoJSON.Point>[] = [];
     for (const v of vehicles) {
-      const chainage = chainageAt(v, nowMs);
-      if (chainage === null) continue;
-      // The icon is drawn facing east (bearing 90°). Rotate it to follow the
-      // track; if that would turn it upside down, use the mirrored
-      // (west-facing) icon instead and rotate that.
-      const bearing = track.bearingAt(chainage, v.direction === "down" ? 1 : -1);
-      const fromEast = ((bearing - 90 + 540) % 360) - 180; // −180…180
-      const facing = Math.abs(fromEast) <= 90 ? "right" : "left";
-      const rotate = facing === "right" ? fromEast : ((fromEast + 360) % 360) - 180;
-      features.push({
-        type: "Feature",
-        properties: { icon: `train-${v.direction}-${facing}`, rotate },
-        geometry: { type: "Point", coordinates: track.lngLatAt(chainage) },
-      });
+      // One train with odd data must never stop the others being drawn.
+      try {
+        const chainage = chainageAt(v, nowMs);
+        if (chainage === null || !Number.isFinite(chainage)) continue;
+        // The icon is drawn facing east (bearing 90°). Rotate it to follow the
+        // track; if that would turn it upside down, use the mirrored
+        // (west-facing) icon instead and rotate that.
+        const bearing = track.bearingAt(chainage, v.direction === "down" ? 1 : -1);
+        const fromEast = ((bearing - 90 + 540) % 360) - 180; // −180…180
+        const facing = Math.abs(fromEast) <= 90 ? "right" : "left";
+        const rotate = facing === "right" ? fromEast : ((fromEast + 360) % 360) - 180;
+        features.push({
+          type: "Feature",
+          properties: { icon: `train-${v.direction}-${facing}`, rotate },
+          geometry: { type: "Point", coordinates: track.lngLatAt(chainage) },
+        });
+      } catch (e) {
+        if (!warned.has(v.id)) {
+          warned.add(v.id);
+          console.warn(`Can't place train ${v.id}; skipping it`, e, v);
+        }
+      }
     }
     return { type: "FeatureCollection", features } as GeoJSON.FeatureCollection;
   }
@@ -210,11 +221,13 @@
       const source = map.getSource("trains") as maplibregl.GeoJSONSource;
       let lastDraw = 0;
       const draw = (frameTime: number) => {
-        if (frameTime - lastDraw >= FRAME_MS) {
-          source.setData(trainFeatures(track, serverNow()));
-          lastDraw = frameTime;
-        }
+        // Schedule the next frame first, so an error in this one can't stop
+        // the animation for good (which would freeze every train).
         frame = requestAnimationFrame(draw);
+        if (frameTime - lastDraw >= FRAME_MS) {
+          lastDraw = frameTime;
+          source.setData(trainFeatures(track, serverNow()));
+        }
       };
       frame = requestAnimationFrame(draw);
     });
